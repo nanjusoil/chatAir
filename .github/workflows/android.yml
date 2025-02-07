@@ -18,5 +18,12 @@ jobs:
     - name: Grant execute permission for gradlew
       run: chmod +x gradlew
     - name: Build with Gradle
-      # 使用「方法一」或「方法二」的命令
-      run: ./gradlew assembleAfatRelease --stacktrace --no-daemon
+      run: ./gradlew :TMessagesProj_App:assembleAfatRelease --stacktrace --no-daemon
+    
+    # 上傳 APK 作為 artifact
+    - name: Upload APK
+      uses: actions/upload-artifact@v3
+      with:
+        name: app-afat-release
+        path: TMessagesProj_App/build/outputs/apk/afat/release/*.apk
+
