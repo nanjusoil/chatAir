@@ -645,6 +645,7 @@
     <string name="UserRestrictionsSendStickers">Send Stickers &amp; GIFs</string>
     <string name="UserRestrictionsEmbedLinks">Embed Links</string>
     <string name="UserRestrictionsChangeInfo">Change Chat Info</string>
+    <string name="InternetStatus">网络连接状态</string>
     <string name="UserRestrictionsPinMessages">Pin Messages</string>
     <string name="UserRestrictionsInviteUsers">Add Users</string>
     <string name="UserRestrictionsNoRead">can\'t read</string>

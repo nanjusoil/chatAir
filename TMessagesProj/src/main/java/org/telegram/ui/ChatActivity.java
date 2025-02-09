@@ -3278,6 +3278,16 @@ public class ChatActivity extends BaseFragment implements NotificationCenter.Not
             contextClearIconItem.setVisibility(isContextClear ? View.VISIBLE: View.GONE);
             contextClearIconItem.setTag(null);
 
+            // 添加internetIcon
+            internetIcon = menu.lazilyAddItem(internet_icon, R.drawable.msg_internet, themeDelegate);
+            internetIcon.setContentDescription(LocaleController.getString("InternetStatus", R.string.InternetStatus));
+            internetIcon.setVisibility(View.VISIBLE);
+            internetIcon.setTag(null);
+            internetIcon.setOnClickListener(v -> {
+                // 处理点击事件
+                Toast.makeText(getContext(), "Internet Icon Clicked", Toast.LENGTH_SHORT).show();
+            });
+            
             undoContextClearIconItem = menu.lazilyAddItem(undo_context_clear, R.drawable.chats_undo, themeDelegate);
             undoContextClearIconItem.setContentDescription(LocaleController.getString("UndoContextClear", R.string.UndoContextClear));
             undoContextClearIconItem.setVisibility(!isContextClear ? View.VISIBLE: View.GONE);
