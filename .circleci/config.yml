@@ -12,6 +12,18 @@ jobs:
     steps:
       - checkout
       
+      # 恢復 Gradle 包裝器緩存
+      - restore_cache:
+          key: v1-gradle-wrapper-{{ checksum "gradle/wrapper/gradle-wrapper.properties" }}
+      
+      # 恢復 Gradle 緩存
+      - restore_cache:
+          key: v1-gradle-cache-{{ checksum "build.gradle" }}-{{ checksum "TMessagesProj_App/build.gradle" }}
+      
+      # 恢復 Android 構建緩存
+      - restore_cache:
+          key: v1-android-build-{{ .Branch }}-{{ .Revision }}
+      
       - run:
           name: Setup Gradle Properties
           command: |
@@ -24,6 +36,27 @@ jobs:
           command: |
             chmod +x gradlew
             ./gradlew :TMessagesProj_App:assembleAfatRelease --stacktrace --no-daemon --info
+
+      # 保存 Gradle 包裝器緩存
+      - save_cache:
+          paths:
+            - ~/.gradle/wrapper
+          key: v1-gradle-wrapper-{{ checksum "gradle/wrapper/gradle-wrapper.properties" }}
+      
+      # 保存 Gradle 緩存
+      - save_cache:
+          paths:
+            - ~/.gradle/caches
+          key: v1-gradle-cache-{{ checksum "build.gradle" }}-{{ checksum "TMessagesProj_App/build.gradle" }}
+      
+      # 保存 Android 構建緩存
+      - save_cache:
+          paths:
+            - ~/.android/build-cache
+            - TMessagesProj_App/.gradle
+            - TMessagesProj_App/build
+            - TMessagesProj/.cxx
+          key: v1-android-build-{{ .Branch }}-{{ .Revision }}
 
       - store_artifacts:
           path: TMessagesProj_App/build/outputs/apk/afat/release
