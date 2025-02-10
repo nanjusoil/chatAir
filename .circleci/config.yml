@@ -3,58 +3,15 @@ version: 2.1
 jobs:
   build:
     docker:
-      - image: cimg/android:2024.01-ndk
+      - image: cimg/android:2023.08-java11
     resource_class: large
-    environment:
-      GRADLE_OPTS: "-Dorg.gradle.jvmargs=-Xmx6g -Dorg.gradle.daemon=false -Dorg.gradle.workers.max=2 -Dorg.gradle.parallel=true"
-      TERM: dumb
-      _JAVA_OPTIONS: "-Xmx6g"
-      ANDROID_HOME: /home/circleci/android-sdk
-      ANDROID_NDK_HOME: /home/circleci/android-sdk/ndk/25.2.9519653
-
     steps:
       - checkout
-
-      - run:
-          name: Setup Environment
-          command: |
-            sudo apt-get update
-            sudo apt-get install -y cmake ninja-build
-            # 創建 .gradle 目錄
-            mkdir -p ~/.gradle
-            # 創建並配置 gradle.properties
-            touch ~/.gradle/gradle.properties
-            echo "org.gradle.jvmargs=-Xmx6g -XX:+HeapDumpOnOutOfMemoryError" >> ~/.gradle/gradle.properties
-            echo "org.gradle.daemon=false" >> ~/.gradle/gradle.properties
-            echo "org.gradle.parallel=true" >> ~/.gradle/gradle.properties
-            echo "android.useAndroidX=true" >> ~/.gradle/gradle.properties
-
-      - restore_cache:
-          keys:
-            - v2-deps-{{ .Branch }}-{{ checksum "build.gradle" }}-{{ checksum "TMessagesProj_App/build.gradle" }}
-            - v2-deps-{{ .Branch }}
-            - v2-deps
-
-      - run:
-          name: Download Dependencies & NDK
-          command: |
-            yes | sdkmanager --licenses || true
-            sdkmanager "ndk;25.2.9519653"
-            ./gradlew androidDependencies
-
-      - save_cache:
-          paths:
-            - ~/.gradle
-            - ~/.android
-            - /home/circleci/android-sdk
-          key: v2-deps-{{ .Branch }}-{{ checksum "build.gradle" }}-{{ checksum "TMessagesProj_App/build.gradle" }}
-
       - run:
           name: Build APK
           command: |
             chmod +x gradlew
-            ./gradlew :TMessagesProj_App:assembleAfatRelease --stacktrace --no-daemon --parallel
-          no_output_timeout: 30m
+            ./gradlew :TMessagesProj_App:assembleAfatRelease --stacktrace --no-daemon
 
       - store_artifacts:
           path: TMessagesProj_App/build/outputs/apk/afat/release
@@ -64,9 +21,4 @@ workflows:
   version: 2
   build-deploy:
     jobs:
-      - build:
-          filters:
-            branches:
-              only: /.*/
-            tags:
-              only: /.*/
+      - build
