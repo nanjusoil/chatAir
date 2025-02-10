@@ -20,7 +20,11 @@ jobs:
           command: |
             sudo apt-get update
             sudo apt-get install -y cmake ninja-build
-            echo "org.gradle.jvmargs=-Xmx6g -XX:+HeapDumpOnOutOfMemoryError" > ~/.gradle/gradle.properties
+            # 創建 .gradle 目錄
+            mkdir -p ~/.gradle
+            # 創建並配置 gradle.properties
+            touch ~/.gradle/gradle.properties
+            echo "org.gradle.jvmargs=-Xmx6g -XX:+HeapDumpOnOutOfMemoryError" >> ~/.gradle/gradle.properties
             echo "org.gradle.daemon=false" >> ~/.gradle/gradle.properties
             echo "org.gradle.parallel=true" >> ~/.gradle/gradle.properties
             echo "android.useAndroidX=true" >> ~/.gradle/gradle.properties
@@ -63,7 +67,6 @@ workflows:
       - build:
           filters:
             branches:
-              only:
-                - /.*/ # 匹配所有分支
+              only: /.*/
             tags:
-              only: /.*/  # 匹配所有標籤
+              only: /.*/
