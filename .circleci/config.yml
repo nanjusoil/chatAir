@@ -3,63 +3,69 @@ version: 2.1
 jobs:
   build:
     docker:
-      - image: cimg/android:2023.08
+      - image: cimg/android:2024.01-ndk # 使用最新的包含 NDK 的鏡像
     resource_class: large
     environment:
-      GRADLE_OPTS: "-Dorg.gradle.jvmargs=-Xmx4g -Dorg.gradle.daemon=false -Dorg.gradle.workers.max=2"
-      JVM_OPTS: "-Xmx4g"
+      GRADLE_OPTS: "-Dorg.gradle.jvmargs=-Xmx6g -Dorg.gradle.daemon=false -Dorg.gradle.workers.max=2 -Dorg.gradle.parallel=true"
+      TERM: dumb
+      _JAVA_OPTIONS: "-Xmx6g"
+      ANDROID_HOME: /home/circleci/android-sdk
+      ANDROID_NDK_HOME: /home/circleci/android-sdk/ndk/25.2.9519653
+
     steps:
       - checkout
-      - restore_cache:
-          keys:
-            - v1-gradle-wrapper-{{ checksum "gradle/wrapper/gradle-wrapper.properties" }}
-            - v1-gradle-wrapper-
-      - restore_cache:
-          keys:
-            - v1-gradle-cache-{{ checksum "build.gradle" }}-{{ checksum "TMessagesProj_App/build.gradle" }}
-            - v1-gradle-cache-
-      - restore_cache:
-          keys:
-            - v1-build-cache-{{ .Branch }}-{{ .Revision }}
-            - v1-build-cache-{{ .Branch }}-
-            - v1-build-cache-
+
       - run:
-          name: Configure Gradle
+          name: Setup Environment
           command: |
-            mkdir -p ~/.gradle
-            echo "org.gradle.jvmargs=-Xmx4g -XX:+HeapDumpOnOutOfMemoryError -XX:+UseParallelGC" > ~/.gradle/gradle.properties
+            sudo apt-get update
+            sudo apt-get install -y cmake ninja-build
+            echo "org.gradle.jvmargs=-Xmx6g -XX:+HeapDumpOnOutOfMemoryError" > ~/.gradle/gradle.properties
             echo "org.gradle.daemon=false" >> ~/.gradle/gradle.properties
-            echo "org.gradle.workers.max=2" >> ~/.gradle/gradle.properties
-            echo "org.gradle.caching=true" >> ~/.gradle/gradle.properties
+            echo "org.gradle.parallel=true" >> ~/.gradle/gradle.properties
             echo "android.useAndroidX=true" >> ~/.gradle/gradle.properties
-            echo "android.enableJetifier=true" >> ~/.gradle/gradle.properties
-            # 移除了 android.enableBuildCache
+
+      - restore_cache:
+          keys:
+            - v2-deps-{{ .Branch }}-{{ checksum "build.gradle" }}-{{ checksum "TMessagesProj_App/build.gradle" }}
+            - v2-deps-{{ .Branch }}
+            - v2-deps
+
+      - run:
+          name: Download Dependencies & NDK
+          command: |
+            yes | sdkmanager --licenses || true
+            sdkmanager "ndk;25.2.9519653"
+            ./gradlew androidDependencies
+
+      - save_cache:
+          paths:
+            - ~/.gradle
+            - ~/.android
+            - /home/circleci/android-sdk
+          key: v2-deps-{{ .Branch }}-{{ checksum "build.gradle" }}-{{ checksum "TMessagesProj_App/build.gradle" }}
+
       - run:
           name: Build APK
           command: |
             chmod +x gradlew
-            ./gradlew :TMessagesProj_App:assembleAfatRelease --stacktrace --no-daemon --build-cache
-      - save_cache:
-          paths:
-            - ~/.gradle/wrapper
-          key: v1-gradle-wrapper-{{ checksum "gradle/wrapper/gradle-wrapper.properties" }}
-      - save_cache:
-          paths:
-            - ~/.gradle/caches
-          key: v1-gradle-cache-{{ checksum "build.gradle" }}-{{ checksum "TMessagesProj_App/build.gradle" }}
-      - save_cache:
-          paths:
-            - ~/.android/build-cache
-            - TMessagesProj_App/.gradle
-            - TMessagesProj_App/build
-            - TMessagesProj/.cxx
-          key: v1-build-cache-{{ .Branch }}-{{ .Revision }}
+            ./gradlew :TMessagesProj_App:assembleAfatRelease --stacktrace --no-daemon --parallel
+          no_output_timeout: 30m
+
       - store_artifacts:
           path: TMessagesProj_App/build/outputs/apk/afat/release
           destination: apk
 
+      - persist_to_workspace:
+          root: .
+          paths:
+            - TMessagesProj_App/build/outputs/apk/afat/release
+
 workflows:
   version: 2
-  workflow:
+  build_and_deploy:
     jobs:
-      - build
+      - build:
+          filters:
+            branches:
+              only: chatair
