@@ -4,22 +4,23 @@ jobs:
   build:
     docker:
       - image: cimg/android:2023.08
-    resource_class: large
+    resource_class: medium  # Changed to medium as it's more commonly available
     steps:
       - checkout
-      - setup_remote_docker
+      - run:
+          name: Check Java version
+          command: java -version
       - restore_cache:
-          key: jars-{{ checksum "build.gradle" }}-{{ checksum  "TMessagesProj_App/build.gradle" }}
+          key: gradle-{{ checksum "build.gradle" }}-{{ checksum  "TMessagesProj_App/build.gradle" }}
       - run:
           name: Download Dependencies
-          command: ./gradlew androidDependencies
+          command: |
+            chmod +x gradlew
+            ./gradlew dependencies
       - save_cache:
           paths:
             - ~/.gradle
-          key: jars-{{ checksum "build.gradle" }}-{{ checksum  "TMessagesProj_App/build.gradle" }}
-      - run:
-          name: Grant execute permission for gradlew
-          command: chmod +x gradlew
+          key: gradle-{{ checksum "build.gradle" }}-{{ checksum  "TMessagesProj_App/build.gradle" }}
       - run:
           name: Build APK
           command: ./gradlew :TMessagesProj_App:assembleAfatRelease --stacktrace --no-daemon
@@ -29,10 +30,6 @@ jobs:
 
 workflows:
   version: 2
-  build_and_test:
+  workflow:
     jobs:
-      - build:
-          filters:
-            branches:
-              only:
-                - chatair
+      - build
