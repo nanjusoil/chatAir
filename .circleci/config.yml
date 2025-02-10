@@ -3,7 +3,7 @@ version: 2.1
 jobs:
   build:
     docker:
-      - image: cimg/android:2024.01-ndk # 使用最新的包含 NDK 的鏡像
+      - image: cimg/android:2024.01-ndk
     resource_class: large
     environment:
       GRADLE_OPTS: "-Dorg.gradle.jvmargs=-Xmx6g -Dorg.gradle.daemon=false -Dorg.gradle.workers.max=2 -Dorg.gradle.parallel=true"
@@ -56,16 +56,14 @@ jobs:
           path: TMessagesProj_App/build/outputs/apk/afat/release
           destination: apk
 
-      - persist_to_workspace:
-          root: .
-          paths:
-            - TMessagesProj_App/build/outputs/apk/afat/release
-
 workflows:
   version: 2
-  build_and_deploy:
+  build-deploy:
     jobs:
       - build:
           filters:
             branches:
-              only: chatair
+              only:
+                - /.*/ # 匹配所有分支
+            tags:
+              only: /.*/  # 匹配所有標籤
