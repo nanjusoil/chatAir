@@ -31,12 +31,14 @@ jobs:
             echo "org.gradle.daemon=false" >> ~/.gradle/gradle.properties
             echo "org.gradle.workers.max=2" >> ~/.gradle/gradle.properties
             echo "org.gradle.caching=true" >> ~/.gradle/gradle.properties
-            echo "android.enableBuildCache=true" >> ~/.gradle/gradle.properties
+            echo "android.useAndroidX=true" >> ~/.gradle/gradle.properties
+            echo "android.enableJetifier=true" >> ~/.gradle/gradle.properties
+            # 移除了 android.enableBuildCache
       - run:
           name: Build APK
           command: |
             chmod +x gradlew
-            ./gradlew :TMessagesProj_App:assembleAfatRelease --stacktrace --no-daemon --parallel
+            ./gradlew :TMessagesProj_App:assembleAfatRelease --stacktrace --no-daemon --build-cache
       - save_cache:
           paths:
             - ~/.gradle/wrapper
